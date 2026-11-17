@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { REGISTRY, flagsFor } from "../dist/outboundsync.js";
 import { run } from "./helpers.ts";
@@ -32,7 +33,10 @@ describe("help", () => {
 	it("prints a version and does not call the API", async () => {
 		const result = await run({ argv: ["me", "--version"] });
 		assert.equal(result.code, 0);
-		assert.equal(result.stdout, "0.0.0-dev\n");
+		// The release workflow stamps the CalVer version into package.json before
+		// running the tests, so compare with package.json, not a fixed string.
+		const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string };
+		assert.equal(result.stdout, `${version}\n`);
 		assert.equal(result.calls.length, 0);
 	});
 
