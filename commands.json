@@ -1,0 +1,1008 @@
+{
+  "schema": "cli.commands.v1",
+  "cli": "outboundsync",
+  "commands": [
+    {
+      "id": "account.metrics",
+      "usage": "outboundsync account metrics (--from <iso> --to <iso> | --since 24h|7d|30d)",
+      "summary": "Count requests, syncs, and destination deliveries in a date range.",
+      "method": "GET",
+      "path": "/api/v1/account/metrics",
+      "flags": [
+        {
+          "name": "connection-id",
+          "help": "Count one connection.",
+          "required": false
+        },
+        {
+          "name": "source-id",
+          "help": "Count one source. Does not filter destination deliveries.",
+          "required": false
+        },
+        {
+          "name": "from",
+          "help": "Range start, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "to",
+          "help": "Range end, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "since",
+          "help": "Relative range: 24h, 7d, or 30d. Sets --to to now.",
+          "required": false,
+          "values": [
+            "24h",
+            "7d",
+            "30d"
+          ]
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "account.status",
+      "usage": "outboundsync account status",
+      "summary": "Show whether this account is ready to sync, with blockers.",
+      "method": "GET",
+      "path": "/api/v1/account/status",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "blocklists.list",
+      "usage": "outboundsync blocklists list",
+      "summary": "List block lists.",
+      "method": "GET",
+      "path": "/api/v1/blocklists",
+      "flags": [
+        {
+          "name": "connection-id",
+          "help": "Filter by connection.",
+          "required": false
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "blocklists.pause",
+      "usage": "outboundsync blocklists pause <id>",
+      "summary": "Pause one block list. Requires --yes and the write scope.",
+      "method": "POST",
+      "path": "/api/v1/blocklists/{id}/pause",
+      "flags": [
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "blocklists.resync",
+      "usage": "outboundsync blocklists resync <id>",
+      "summary": "Reload one block list from the CRM. Requires --yes and the write scope.",
+      "method": "POST",
+      "path": "/api/v1/blocklists/{id}/resync",
+      "flags": [
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "connections.list",
+      "usage": "outboundsync connections list",
+      "summary": "List CRM connections visible to this key.",
+      "method": "GET",
+      "path": "/api/v1/connections",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "contacts.outreach",
+      "usage": "outboundsync contacts outreach",
+      "summary": "Look up whether a contact was outreached. Pass --email, --profile-url, or --file.",
+      "method": "GET",
+      "path": "/api/v1/contacts/outreach",
+      "flags": [
+        {
+          "name": "email",
+          "help": "One email address.",
+          "required": false
+        },
+        {
+          "name": "profile-url",
+          "help": "LinkedIn (/in/ or /pub/) or X profile URL. Repeat up to 5 times.",
+          "required": false
+        },
+        {
+          "name": "file",
+          "help": "JSONL or CSV file of contacts. Use - to read stdin.",
+          "required": false
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "deliveries.list",
+      "usage": "outboundsync deliveries list (--from <iso> --to <iso> | --since 24h|7d|30d)",
+      "summary": "List destination deliveries in a date range.",
+      "method": "GET",
+      "path": "/api/v1/deliveries",
+      "flags": [
+        {
+          "name": "status",
+          "help": "Filter by delivery status.",
+          "required": false,
+          "values": [
+            "success",
+            "error"
+          ]
+        },
+        {
+          "name": "destination-id",
+          "help": "Filter by destination.",
+          "required": false
+        },
+        {
+          "name": "from",
+          "help": "Range start, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "to",
+          "help": "Range end, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "since",
+          "help": "Relative range: 24h, 7d, or 30d. Sets --to to now.",
+          "required": false,
+          "values": [
+            "24h",
+            "7d",
+            "30d"
+          ]
+        },
+        {
+          "name": "cursor",
+          "help": "Page cursor from a previous response.",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "help": "Page size. Default 100, max 500. Omitted unless you pass it.",
+          "required": false
+        },
+        {
+          "name": "all",
+          "help": "Follow nextCursor until the server reports no more pages.",
+          "required": false
+        },
+        {
+          "name": "max-pages",
+          "help": "Stop after this many pages. Default 200.",
+          "required": false
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "destinations.deliveries",
+      "usage": "outboundsync destinations deliveries <id> (--from <iso> --to <iso> | --since 24h|7d|30d)",
+      "summary": "List deliveries for one destination.",
+      "method": "GET",
+      "path": "/api/v1/destinations/{id}/deliveries",
+      "flags": [
+        {
+          "name": "status",
+          "help": "Filter by delivery status.",
+          "required": false,
+          "values": [
+            "success",
+            "error"
+          ]
+        },
+        {
+          "name": "from",
+          "help": "Range start, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "to",
+          "help": "Range end, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "since",
+          "help": "Relative range: 24h, 7d, or 30d. Sets --to to now.",
+          "required": false,
+          "values": [
+            "24h",
+            "7d",
+            "30d"
+          ]
+        },
+        {
+          "name": "cursor",
+          "help": "Page cursor from a previous response.",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "help": "Page size. Default 100, max 500. Omitted unless you pass it.",
+          "required": false
+        },
+        {
+          "name": "all",
+          "help": "Follow nextCursor until the server reports no more pages.",
+          "required": false
+        },
+        {
+          "name": "max-pages",
+          "help": "Stop after this many pages. Default 200.",
+          "required": false
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "destinations.delivery-metrics",
+      "usage": "outboundsync destinations delivery-metrics <id> (--from <iso> --to <iso> | --since 24h|7d|30d)",
+      "summary": "Count deliveries for one destination.",
+      "method": "GET",
+      "path": "/api/v1/destinations/{id}/deliveries/metrics",
+      "flags": [
+        {
+          "name": "from",
+          "help": "Range start, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "to",
+          "help": "Range end, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "since",
+          "help": "Relative range: 24h, 7d, or 30d. Sets --to to now.",
+          "required": false,
+          "values": [
+            "24h",
+            "7d",
+            "30d"
+          ]
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "destinations.get",
+      "usage": "outboundsync destinations get <id>",
+      "summary": "Show one destination.",
+      "method": "GET",
+      "path": "/api/v1/destinations/{id}",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "destinations.list",
+      "usage": "outboundsync destinations list",
+      "summary": "List outbound destinations.",
+      "method": "GET",
+      "path": "/api/v1/destinations",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "destinations.replay",
+      "usage": "outboundsync destinations replay <id> <deliveryId>",
+      "summary": "Replay one destination delivery. Requires --yes and the write scope.",
+      "method": "POST",
+      "path": "/api/v1/destinations/{id}/deliveries/{deliveryId}/replay",
+      "flags": [
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "destinations.reply-relays",
+      "usage": "outboundsync destinations reply-relays",
+      "summary": "List reply-relay destinations.",
+      "method": "GET",
+      "path": "/api/v1/destinations/reply-relays",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "events.get",
+      "usage": "outboundsync events get <id>",
+      "summary": "Show one platform event and its deliveries. Connection-scoped keys see their connection's events plus account-level events.",
+      "method": "GET",
+      "path": "/api/v1/events/{id}",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "events.list",
+      "usage": "outboundsync events list",
+      "summary": "List platform events. Connection-scoped keys see their connection's events plus account-level events.",
+      "method": "GET",
+      "path": "/api/v1/events",
+      "flags": [
+        {
+          "name": "type",
+          "help": "Event type. Repeat to include more than one.",
+          "required": false
+        },
+        {
+          "name": "delivered",
+          "help": "true for events with at least one successful delivery, false for the rest.",
+          "required": false,
+          "values": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "name": "cursor",
+          "help": "Page cursor from a previous response.",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "help": "Page size. Default 25, max 100. Omitted unless you pass it.",
+          "required": false
+        },
+        {
+          "name": "all",
+          "help": "Follow nextCursor until the server reports no more pages.",
+          "required": false
+        },
+        {
+          "name": "max-pages",
+          "help": "Stop after this many pages. Default 200.",
+          "required": false
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "me",
+      "usage": "outboundsync me",
+      "summary": "Show the account, API key, and connections for this key.",
+      "method": "GET",
+      "path": "/api/v1/me",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "openapi",
+      "usage": "outboundsync openapi",
+      "summary": "Print the OpenAPI document. No API key required.",
+      "method": "GET",
+      "path": "/api/v1/openapi.yaml",
+      "flags": [
+        {
+          "name": "format",
+          "help": "Document format. Default yaml.",
+          "required": false,
+          "values": [
+            "yaml",
+            "json"
+          ]
+        }
+      ],
+      "write": false,
+      "auth": false
+    },
+    {
+      "id": "requests.list",
+      "usage": "outboundsync requests list (--from <iso> --to <iso> | --since 24h|7d|30d)",
+      "summary": "List webhook requests in a date range.",
+      "method": "GET",
+      "path": "/api/v1/requests",
+      "flags": [
+        {
+          "name": "source-id",
+          "help": "Filter by source.",
+          "required": false
+        },
+        {
+          "name": "from",
+          "help": "Range start, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "to",
+          "help": "Range end, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "since",
+          "help": "Relative range: 24h, 7d, or 30d. Sets --to to now.",
+          "required": false,
+          "values": [
+            "24h",
+            "7d",
+            "30d"
+          ]
+        },
+        {
+          "name": "cursor",
+          "help": "Page cursor from a previous response.",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "help": "Page size. Default 100, max 500. Omitted unless you pass it.",
+          "required": false
+        },
+        {
+          "name": "all",
+          "help": "Follow nextCursor until the server reports no more pages.",
+          "required": false
+        },
+        {
+          "name": "max-pages",
+          "help": "Stop after this many pages. Default 200.",
+          "required": false
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "requests.metrics",
+      "usage": "outboundsync requests metrics (--from <iso> --to <iso> | --since 24h|7d|30d)",
+      "summary": "Count webhook requests in a date range.",
+      "method": "GET",
+      "path": "/api/v1/requests/metrics",
+      "flags": [
+        {
+          "name": "source-id",
+          "help": "Count one source.",
+          "required": false
+        },
+        {
+          "name": "from",
+          "help": "Range start, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "to",
+          "help": "Range end, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "since",
+          "help": "Relative range: 24h, 7d, or 30d. Sets --to to now.",
+          "required": false,
+          "values": [
+            "24h",
+            "7d",
+            "30d"
+          ]
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "setup",
+      "usage": "outboundsync setup",
+      "summary": "Show the setup wizard for this key.",
+      "method": "GET",
+      "path": "/api/v1/setup",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "sources.list",
+      "usage": "outboundsync sources list",
+      "summary": "List webhook sources and their config.",
+      "method": "GET",
+      "path": "/api/v1/sources",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "sources.requests",
+      "usage": "outboundsync sources requests <sourceId> (--from <iso> --to <iso> | --since 24h|7d|30d)",
+      "summary": "List webhook requests received by one source.",
+      "method": "GET",
+      "path": "/api/v1/sources/{sourceId}/requests",
+      "flags": [
+        {
+          "name": "from",
+          "help": "Range start, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "to",
+          "help": "Range end, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "since",
+          "help": "Relative range: 24h, 7d, or 30d. Sets --to to now.",
+          "required": false,
+          "values": [
+            "24h",
+            "7d",
+            "30d"
+          ]
+        },
+        {
+          "name": "cursor",
+          "help": "Page cursor from a previous response.",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "help": "Page size. Default 100, max 500. Omitted unless you pass it.",
+          "required": false
+        },
+        {
+          "name": "all",
+          "help": "Follow nextCursor until the server reports no more pages.",
+          "required": false
+        },
+        {
+          "name": "max-pages",
+          "help": "Stop after this many pages. Default 200.",
+          "required": false
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "sources.retry-syncs",
+      "usage": "outboundsync sources retry-syncs <sourceId>",
+      "summary": "Bulk-retry failed HubSpot and Salesforce syncs for one source. Requires --yes and the write scope.",
+      "method": "POST",
+      "path": "/api/v1/sources/{sourceId}/syncs/retry",
+      "flags": [
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "sources.syncs",
+      "usage": "outboundsync sources syncs <sourceId> (--from <iso> --to <iso> | --since 24h|7d|30d)",
+      "summary": "List CRM syncs for one source.",
+      "method": "GET",
+      "path": "/api/v1/sources/{sourceId}/syncs",
+      "flags": [
+        {
+          "name": "status",
+          "help": "Filter by sync status.",
+          "required": false,
+          "values": [
+            "success",
+            "warning",
+            "error"
+          ]
+        },
+        {
+          "name": "connection-id",
+          "help": "Filter by connection.",
+          "required": false
+        },
+        {
+          "name": "from",
+          "help": "Range start, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "to",
+          "help": "Range end, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "since",
+          "help": "Relative range: 24h, 7d, or 30d. Sets --to to now.",
+          "required": false,
+          "values": [
+            "24h",
+            "7d",
+            "30d"
+          ]
+        },
+        {
+          "name": "cursor",
+          "help": "Page cursor from a previous response.",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "help": "Page size. Default 100, max 500. Omitted unless you pass it.",
+          "required": false
+        },
+        {
+          "name": "all",
+          "help": "Follow nextCursor until the server reports no more pages.",
+          "required": false
+        },
+        {
+          "name": "max-pages",
+          "help": "Stop after this many pages. Default 200.",
+          "required": false
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "syncs.get",
+      "usage": "outboundsync syncs get <id>",
+      "summary": "Show one CRM sync, including its error.",
+      "method": "GET",
+      "path": "/api/v1/syncs/{id}",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "syncs.list",
+      "usage": "outboundsync syncs list (--from <iso> --to <iso> | --since 24h|7d|30d)",
+      "summary": "List CRM syncs in a date range.",
+      "method": "GET",
+      "path": "/api/v1/syncs",
+      "flags": [
+        {
+          "name": "status",
+          "help": "Filter by sync status.",
+          "required": false,
+          "values": [
+            "success",
+            "warning",
+            "error"
+          ]
+        },
+        {
+          "name": "source-id",
+          "help": "Filter by source.",
+          "required": false
+        },
+        {
+          "name": "connection-id",
+          "help": "Filter by connection.",
+          "required": false
+        },
+        {
+          "name": "from",
+          "help": "Range start, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "to",
+          "help": "Range end, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "since",
+          "help": "Relative range: 24h, 7d, or 30d. Sets --to to now.",
+          "required": false,
+          "values": [
+            "24h",
+            "7d",
+            "30d"
+          ]
+        },
+        {
+          "name": "cursor",
+          "help": "Page cursor from a previous response.",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "help": "Page size. Default 100, max 500. Omitted unless you pass it.",
+          "required": false
+        },
+        {
+          "name": "all",
+          "help": "Follow nextCursor until the server reports no more pages.",
+          "required": false
+        },
+        {
+          "name": "max-pages",
+          "help": "Stop after this many pages. Default 200.",
+          "required": false
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "syncs.metrics",
+      "usage": "outboundsync syncs metrics (--from <iso> --to <iso> | --since 24h|7d|30d)",
+      "summary": "Count CRM syncs in a date range.",
+      "method": "GET",
+      "path": "/api/v1/syncs/metrics",
+      "flags": [
+        {
+          "name": "source-id",
+          "help": "Count one source.",
+          "required": false
+        },
+        {
+          "name": "connection-id",
+          "help": "Count one connection.",
+          "required": false
+        },
+        {
+          "name": "from",
+          "help": "Range start, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "to",
+          "help": "Range end, ISO-8601 with a timezone offset.",
+          "required": false
+        },
+        {
+          "name": "since",
+          "help": "Relative range: 24h, 7d, or 30d. Sets --to to now.",
+          "required": false,
+          "values": [
+            "24h",
+            "7d",
+            "30d"
+          ]
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "syncs.retry",
+      "usage": "outboundsync syncs retry <id>",
+      "summary": "Re-queue one failed HubSpot or Salesforce sync. Requires --yes and the write scope.",
+      "method": "POST",
+      "path": "/api/v1/syncs/{id}/retry",
+      "flags": [
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "webhooks.create",
+      "usage": "outboundsync webhooks create",
+      "summary": "Create a platform webhook endpoint. The signing secret is printed once. Requires --yes, the write scope, and an account-scoped key.",
+      "method": "POST",
+      "path": "/api/v1/webhooks",
+      "flags": [
+        {
+          "name": "url",
+          "help": "https endpoint that will receive events.",
+          "required": true
+        },
+        {
+          "name": "description",
+          "help": "Optional label, at most 500 characters.",
+          "required": false
+        },
+        {
+          "name": "event",
+          "help": "Event type to enable. Repeat to set the list. Omit to enable every event.",
+          "required": false
+        },
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "webhooks.delete",
+      "usage": "outboundsync webhooks delete <id>",
+      "summary": "Soft-delete a platform webhook endpoint. Requires --yes, the write scope, and an account-scoped key.",
+      "method": "DELETE",
+      "path": "/api/v1/webhooks/{id}",
+      "flags": [
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "webhooks.deliveries",
+      "usage": "outboundsync webhooks deliveries <id>",
+      "summary": "List delivery attempts for one platform webhook. Requires an account-scoped key.",
+      "method": "GET",
+      "path": "/api/v1/webhooks/{id}/deliveries",
+      "flags": [
+        {
+          "name": "status",
+          "help": "Filter by delivery status.",
+          "required": false,
+          "values": [
+            "PENDING",
+            "SUCCEEDED",
+            "FAILED",
+            "DEAD"
+          ]
+        },
+        {
+          "name": "cursor",
+          "help": "Page cursor from a previous response.",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "help": "Page size. Default 25, max 100. Omitted unless you pass it.",
+          "required": false
+        },
+        {
+          "name": "all",
+          "help": "Follow nextCursor until the server reports no more pages.",
+          "required": false
+        },
+        {
+          "name": "max-pages",
+          "help": "Stop after this many pages. Default 200.",
+          "required": false
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "webhooks.get",
+      "usage": "outboundsync webhooks get <id>",
+      "summary": "Show one platform webhook endpoint. Requires an account-scoped key.",
+      "method": "GET",
+      "path": "/api/v1/webhooks/{id}",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "webhooks.list",
+      "usage": "outboundsync webhooks list",
+      "summary": "List platform webhook endpoints. Requires an account-scoped key.",
+      "method": "GET",
+      "path": "/api/v1/webhooks",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "webhooks.replay",
+      "usage": "outboundsync webhooks replay <id> <deliveryId>",
+      "summary": "Replay one platform webhook delivery. Requires --yes, the write scope, and an account-scoped key.",
+      "method": "POST",
+      "path": "/api/v1/webhooks/{id}/deliveries/{deliveryId}/replay",
+      "flags": [
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "webhooks.rotate-secret",
+      "usage": "outboundsync webhooks rotate-secret <id>",
+      "summary": "Rotate a webhook signing secret. The new secret is printed once. Requires --yes, the write scope, and an account-scoped key.",
+      "method": "POST",
+      "path": "/api/v1/webhooks/{id}/rotate-secret",
+      "flags": [
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "webhooks.test",
+      "usage": "outboundsync webhooks test <id>",
+      "summary": "Queue a test.ping delivery to one platform webhook. Requires --yes, the write scope, and an account-scoped key.",
+      "method": "POST",
+      "path": "/api/v1/webhooks/{id}/test",
+      "flags": [
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "webhooks.update",
+      "usage": "outboundsync webhooks update <id>",
+      "summary": "Update a platform webhook endpoint. Pass at least one field. Requires --yes, the write scope, and an account-scoped key.",
+      "method": "PATCH",
+      "path": "/api/v1/webhooks/{id}",
+      "flags": [
+        {
+          "name": "url",
+          "help": "Replacement https endpoint.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "help": "Replacement label, at most 500 characters.",
+          "required": false
+        },
+        {
+          "name": "event",
+          "help": "Replacement event type. Repeat to replace the list.",
+          "required": false
+        },
+        {
+          "name": "active",
+          "help": "true to enable the endpoint, false to disable it.",
+          "required": false,
+          "values": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    }
+  ]
+}

@@ -23,7 +23,7 @@ The live spec, canonicalised with `jq -S .`, is at `$RUNNER_TEMP/openapi.live.js
 
 ## What to update
 
-Only edit `src/**`, `test/**` (not `test/package.test.ts`, `test/check-api-coverage.test.mjs`, `test/release-calver.test.mjs` or `test/fixtures/v1.yaml`) and `README.md`.
+Only edit `src/**`, `test/**` (not `test/package.test.ts`, `test/commands-json.test.ts`, `test/check-api-coverage.test.mjs`, `test/release-calver.test.mjs` or `test/fixtures/v1.yaml`) and `README.md`.
 
 `src/registry.ts` is the only command list: help, flag validation and request building are derived from its `REGISTRY` table. For each change in the spec:
 
@@ -51,6 +51,7 @@ If a new operation needs a capability the registry can't express (for example a 
 
 - **The spec can be wrong.** Never delete a specific fact from help text, `confirm` messages or the README (a limit, default, maximum, scope requirement, rate limit, retry window or status code) just because the spec does not mention it. When the CLI and the spec disagree on a fact that the spec diff did not change (in bootstrap mode, every fact), keep the CLI text as it is and list the conflict in your summary under `Spec conflicts to check:` (what the CLI says, what the spec says, and where). Change such a fact only when the snapshot diff itself changed it.
 - Read `README.md` first and follow it. Describe only what the spec says. Never invent endpoints, parameters, fields, flags, enum values or limits.
+- Never edit `commands.json` by hand. It is generated from `src/registry.ts`: when `npm test` reports it out of date, run `npm run commands:json`. A later step regenerates it anyway and reverts any other change to it.
 - Never add runtime dependencies. Don't edit `package.json` (its `version`, `bin`, `files`, `publishConfig`, scripts or anything else), `package-lock.json`, `.github/`, `api-sync/`, `scripts/`, `.nvmrc`, `tsconfig.json` or `tsup.config.ts`.
 - If the diff only touches descriptions or response schemas that the CLI doesn't use, change nothing.
 - Don't commit, push, create branches or open pull requests.
