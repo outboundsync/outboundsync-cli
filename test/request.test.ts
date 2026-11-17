@@ -63,6 +63,13 @@ describe("requests", () => {
 		assert.deepEqual(result.calls[0]?.body, { isActive: false });
 	});
 
+	it("requires --url on create", async () => {
+		const result = await run({ argv: ["webhooks", "create", "--description", "CRM", "--yes"] });
+		assert.equal(result.code, 1);
+		assert.equal(result.calls.length, 0);
+		assert.match(result.stderr, /webhooks create requires --url/);
+	});
+
 	it("rejects a non-https webhook url", async () => {
 		const result = await run({ argv: ["webhooks", "create", "--url", "http://example.com/hook", "--yes"] });
 		assert.equal(result.code, 1);

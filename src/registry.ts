@@ -1,6 +1,8 @@
 export interface FlagSpec {
 	name: string;
 	help: string;
+	/** The command fails with a usage error without this flag. */
+	required?: boolean;
 	repeatable?: boolean;
 	values?: readonly string[];
 	query?: string;
@@ -459,7 +461,7 @@ export const REGISTRY = [
 		path: "/webhooks",
 		args: [],
 		flags: [
-			{ name: "url", help: "https endpoint that will receive events.", body: "url" },
+			{ name: "url", help: "https endpoint that will receive events.", body: "url", required: true },
 			{ name: "description", help: "Optional label, at most 500 characters.", body: "description" },
 			{
 				name: "event",
@@ -651,7 +653,7 @@ export function flagsFor(command: CommandSpec): readonly FlagSpec[] {
 		}
 	}
 	if (command.confirm) {
-		flags.push({ name: "yes", help: "Confirm this write.", boolean: true });
+		flags.push({ name: "yes", help: "Confirm this write.", boolean: true, required: true });
 	}
 	return flags;
 }

@@ -96,8 +96,10 @@ export function buildRequest(
 		if (email !== undefined && !EMAIL_RE.test(email)) throw new UsageError("invalid email");
 		if (profiles.length > 5) throw new UsageError("at most 5 profile URLs");
 	}
-	if (command.id === "webhooks.create" && typeof body.url !== "string") {
-		throw new UsageError("webhooks create requires --url");
+	for (const spec of flagsFor(command)) {
+		if (!spec.required || SKIPPED.has(spec.name)) continue;
+		const sent = spec.body ? body[spec.body] : spec.query ? query[spec.query] : undefined;
+		if (sent === undefined) throw new UsageError(`${command.words.join(" ")} requires --${spec.name}`);
 	}
 	if (command.id === "webhooks.update" && bodyFields === 0) {
 		throw new UsageError("webhooks update requires --url, --description, --event, or --active");

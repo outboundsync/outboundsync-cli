@@ -437,5 +437,6 @@ export { EXIT, DEFAULT_BASE_URL, TOKEN_ENV, BASE_URL_ENV } from "./const";
 export { parseArgv, assertKnownFlags } from "./parse";
 export { REGISTRY, flagsFor, resolveCommand } from "./registry";
 export { buildRequest } from "./request";
-export { rootHelp, commandHelp } from "./help";
+export { rootHelp, commandHelp, commandUsage } from "./help";
+export { commandsJson, commandsJsonText } from "./commands-json";
 export { classifyHttpError } from "./errors";
