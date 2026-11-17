@@ -1,176 +1,188 @@
 # outboundsync
 
-Command line for the [OutboundSync API](https://app.outboundsync.com/api/v1). It covers the same v1 surface as the product MCP: account, sources, syncs, destinations, block lists, platform webhooks, and contact outreach.
+Command-line interface for the [OutboundSync](https://outboundsync.com) API v1. It covers the same surface as the OutboundSync MCP server: account, sources, syncs, destinations, block lists, platform webhooks, events, and contact outreach.
 
-The binary is `outboundsync`. It has no runtime dependencies.
+The binary is `outboundsync`. It has no runtime dependencies. API reference: [outboundsync.com/docs/api/v1](https://outboundsync.com/docs/api/v1). Live contract: `outboundsync openapi`.
 
 ## Install
 
 ```bash
-npm install -g outboundsync
+npm i -g outboundsync
+outboundsync --help
 ```
 
-Node 20 or newer. From a checkout:
+Or run it without installing:
 
 ```bash
-npm ci
-npm run build
-node dist/outboundsync.js --help
+npx outboundsync --help
 ```
+
+Requires Node.js 20 or newer.
 
 ## Authentication
 
-There is no login command and the key is not written to disk.
-
-1. In the dashboard, open Platform access → API keys and create a key. It looks like `osapi_…`.
-2. Pass it with `--token`, or set `OUTBOUNDSYNC_API_KEY`.
-
-`--token` wins over the environment variable. A connection-scoped key can read and write data for one CRM connection. Webhook commands need an account-scoped key. Write commands need a key with the write scope; keys from that screen are read-only until support issues a write-scoped key.
-
-The default base URL is `https://app.outboundsync.com/api/v1`. Override it with `--base-url` or `OUTBOUNDSYNC_API_BASE_URL`. The value includes `/api/v1`. The CLI does not append that prefix.
+1. In the OutboundSync dashboard, open **Platform access → API keys** and create a key. It starts with `osapi_`.
+2. Export it:
 
 ```bash
-export OUTBOUNDSYNC_API_KEY=osapi_…
+export OUTBOUNDSYNC_API_KEY=osapi_your_key_here
 outboundsync me
 ```
 
-## Output
+`--token <key>` overrides the environment variable for one command, but a flag value is visible in shell history and the process list, so prefer the variable. The CLI never stores the key, never prints it, and redacts it from anything the API echoes back. There is no login command.
 
-Success prints pretty JSON to stdout. `--json` prints one compact JSON value and skips the human summary. Errors go to stderr.
+What a key can do:
 
-`--all` and `contacts outreach --file` print JSONL when `--json` is set: one record per line, not the page wrapper. Without `--json`, `--all` prints each page and then a one-line count.
+- **Scope.** Keys created in the dashboard are read-only. Write commands need a key with the `write` scope; ask OutboundSync support for one.
+- **Account vs connection.** A key is either account-wide ("All connections") or scoped to one CRM connection. A connection-scoped key reads and writes that connection's data. `webhooks …` commands need an account-scoped key. `events …` work with either; a connection-scoped key sees its connection's events plus account-level events.
+- **Plan features.** `webhooks …` and `events …` need platform webhooks on the plan. `blocklists resync` needs block lists on the plan.
 
-`account status` exits 0 even when `ready` is false. The summary line says `ready: yes` or `ready: no`.
+`outboundsync me` shows the key's scopes and connection scope.
+
+The API base defaults to `https://app.outboundsync.com/api/v1`. Override it with `OUTBOUNDSYNC_API_BASE_URL` or `--base-url`; the value includes `/api/v1`. It must be `https` (plain `http` is accepted only for `localhost`, `127.0.0.1` or `[::1]`). The CLI does not follow redirects, so the key is only ever sent to that base URL.
 
 ## Commands
 
-Global flags: `--token`, `--base-url`, `--json`, `-h` / `--help`, `-V` / `--version`.
+`outboundsync` with no arguments prints every command. `outboundsync <group>` lists a group, and `outboundsync <command> --help` shows that command's flags.
 
-`outboundsync` with no command prints the command list. `outboundsync syncs` prints the sync subcommands.
+| Command | API route | Scope | Notes |
+| --- | --- | --- | --- |
+| `openapi` | `GET /openapi.yaml`, `/openapi.json` | none | No key needed. `--format yaml\|json` |
+| `me` | `GET /me` | read | |
+| `account status` | `GET /account/status` | read | |
+| `account metrics` | `GET /account/metrics` | read | date range |
+| `setup` | `GET /setup` | read | |
+| `connections list` | `GET /connections` | read | |
+| `sources list` | `GET /sources` | read | |
+| `sources requests <sourceId>` | `GET /sources/{sourceId}/requests` | read | date range, pages |
+| `sources syncs <sourceId>` | `GET /sources/{sourceId}/syncs` | read | date range, pages |
+| `sources retry-syncs <sourceId>` | `POST /sources/{sourceId}/syncs/retry` | write | `--yes` |
+| `contacts outreach` | `GET /contacts/outreach` | read | `--email`, `--profile-url`, or `--file` |
+| `requests list` | `GET /requests` | read | date range, pages |
+| `requests metrics` | `GET /requests/metrics` | read | date range |
+| `syncs list` | `GET /syncs` | read | date range, pages |
+| `syncs get <id>` | `GET /syncs/{id}` | read | |
+| `syncs metrics` | `GET /syncs/metrics` | read | date range |
+| `syncs retry <id>` | `POST /syncs/{id}/retry` | write | `--yes` |
+| `destinations list` | `GET /destinations` | read | |
+| `destinations get <id>` | `GET /destinations/{id}` | read | |
+| `destinations reply-relays` | `GET /destinations/reply-relays` | read | |
+| `destinations deliveries <id>` | `GET /destinations/{id}/deliveries` | read | date range, pages |
+| `destinations delivery-metrics <id>` | `GET /destinations/{id}/deliveries/metrics` | read | date range |
+| `destinations replay <id> <deliveryId>` | `POST /destinations/{id}/deliveries/{deliveryId}/replay` | write | `--yes` |
+| `deliveries list` | `GET /deliveries` | read | date range, pages |
+| `blocklists list` | `GET /blocklists` | read | |
+| `blocklists pause <id>` | `POST /blocklists/{id}/pause` | write | `--yes` |
+| `blocklists resync <id>` | `POST /blocklists/{id}/resync` | write | `--yes` |
+| `webhooks list` | `GET /webhooks` | read | account key |
+| `webhooks get <id>` | `GET /webhooks/{id}` | read | account key |
+| `webhooks create` | `POST /webhooks` | write | account key, `--yes` |
+| `webhooks update <id>` | `PATCH /webhooks/{id}` | write | account key, `--yes` |
+| `webhooks delete <id>` | `DELETE /webhooks/{id}` | write | account key, `--yes` |
+| `webhooks rotate-secret <id>` | `POST /webhooks/{id}/rotate-secret` | write | account key, `--yes` |
+| `webhooks test <id>` | `POST /webhooks/{id}/test` | write | account key, `--yes` |
+| `webhooks deliveries <id>` | `GET /webhooks/{id}/deliveries` | read | account key, pages |
+| `webhooks replay <id> <deliveryId>` | `POST /webhooks/{id}/deliveries/{deliveryId}/replay` | write | account key, `--yes` |
+| `events list` | `GET /events` | read | pages |
+| `events get <id>` | `GET /events/{id}` | read | |
+
+Routes are relative to the base URL. Global flags: `--token`, `--base-url`, `--json`, `-h` / `--help`, `-V` / `--version`.
+
+Examples:
 
 ```bash
-outboundsync openapi
-outboundsync openapi --format json
-outboundsync me
 outboundsync account status
 outboundsync account metrics --since 24h
-outboundsync setup
-outboundsync connections list
-outboundsync sources list
-outboundsync sources requests 42 --since 7d --limit 50
+outboundsync syncs list --since 24h --status error --connection-id 7
+outboundsync syncs retry 1001 --yes
 outboundsync sources syncs 42 --from 2026-08-01T00:00:00Z --to 2026-08-08T00:00:00Z --status error
-outboundsync sources retry-syncs 42 --yes
 outboundsync contacts outreach --email ada@example.com
-outboundsync contacts outreach --profile-url example.com/in/ada --profile-url example.com/in/ada-2
-outboundsync contacts outreach --file contacts.jsonl
-outboundsync requests list --since 24h --source-id 42
-outboundsync requests metrics --since 30d
-outboundsync syncs list --since 24h --status warning --connection-id 7
-outboundsync syncs get 1001
-outboundsync syncs metrics --since 7d
-outboundsync syncs retry 1001
-outboundsync destinations list
-outboundsync destinations get 3
-outboundsync destinations reply-relays
-outboundsync destinations deliveries 3 --since 24h --status error
-outboundsync destinations delivery-metrics 3 --since 7d
-outboundsync destinations replay 3 900
-outboundsync deliveries list --since 24h --destination-id 3
-outboundsync blocklists list --connection-id 7
-outboundsync blocklists pause 8
-outboundsync blocklists resync 8 --yes
-outboundsync webhooks list
-outboundsync webhooks get oswhk_…
-outboundsync webhooks create --url https://example.com/hooks/outboundsync --event sync.failed
-outboundsync webhooks update oswhk_… --active false
-outboundsync webhooks delete oswhk_… --yes
-outboundsync webhooks rotate-secret oswhk_… --yes
-outboundsync webhooks test oswhk_…
-outboundsync webhooks deliveries oswhk_… --status FAILED
-outboundsync webhooks replay oswhk_… oswhd_…
-outboundsync events list --type sync.failed --delivered false --limit 25
-outboundsync events get osevt_…
+outboundsync contacts outreach --profile-url linkedin.com/in/ada-lovelace
+outboundsync contacts outreach --file contacts.csv --json > outreach.jsonl
+outboundsync destinations deliveries 3 --since 7d --status error --all --json
+outboundsync webhooks create --url https://example.com/hooks/outboundsync --event sync.failed --yes
+outboundsync events list --type sync.failed --delivered false
 ```
+
+### Write commands need `--yes`
+
+Every command that needs the `write` scope exits 1 without calling the API unless you pass `--yes`, and says what it would do:
+
+- `syncs retry` re-queues one failed HubSpot or Salesforce sync.
+- `sources retry-syncs` re-queues every recorded error from the last 30 days for that source. The API allows one bulk retry per source per 24 hours; retry one sync with `syncs retry` first to check the fix.
+- `destinations replay` and `webhooks replay` send a delivery to its URL again.
+- `blocklists pause` stops fetching and pushing a list (it does not clear the list in the sequencer). `blocklists resync` enables it and queues a full reload from the CRM.
+- `webhooks create`, `update`, `delete`, `rotate-secret`, and `test` manage platform webhook endpoints. `delete` is a soft delete that the API cannot undo. `rotate-secret` stops the old secret verifying at once.
+
+`webhooks create` and `webhooks rotate-secret` print the `oswhsec_…` signing secret on stdout once, with a stderr reminder to store it. A later GET does not return it. `oswhsec_…` values are redacted from error output.
+
+`webhooks update` needs at least one of `--url`, `--description`, `--event`, or `--active true|false`. Repeat `--event` to replace the list. On create, omitting `--event` enables every event type.
 
 ### Dates
 
-Commands that take a range need either both `--from` and `--to`, or `--since 24h|7d|30d`.
-
-Timestamps are full ISO-8601 values with a timezone offset (`2026-08-01T00:00:00Z`). A date with no time is rejected. `--since` sets `--to` to now and cannot be combined with `--from` or `--to`. The span can be at most 31 days. A span of exactly 31 days is allowed.
+Range commands need both `--from` and `--to`, or `--since 24h|7d|30d`. Timestamps are full ISO-8601 with a timezone offset (`2026-08-01T00:00:00Z`). `--since` ends at now and cannot be combined with `--from`/`--to`. The span can be at most 31 days, matching the API.
 
 ### Pages
 
-Cursor endpoints (`requests`, `syncs`, destination deliveries, webhook deliveries, events) accept `--cursor`, `--limit`, and `--all`.
+Commands marked "pages" accept `--cursor`, `--limit`, and `--all`. Activity lists (requests, syncs, destination deliveries) default to 100 per page, max 500. Webhook deliveries and events default to 25, max 100. The CLI sends `limit` only when you pass `--limit`.
 
-Activity lists default to 100 and cap at 500. Webhook deliveries and events default to 25 and cap at 100. The CLI does not send a limit unless you pass `--limit`.
-
-`--all` follows `nextCursor` until `hasMore` is false. The default cap is 200 pages. `--max-pages` raises it and is only valid with `--all`. Hitting the cap prints the pages already fetched, writes a stderr line, and exits 1. The first HTTP error stops the walk and keeps that call's exit code.
+`--all` follows `nextCursor` until the API reports no more pages, up to 200 pages (`--max-pages` raises the cap). Hitting the cap prints what was fetched, writes a stderr line, and exits 1. An HTTP error stops the walk with that error's exit code.
 
 ### Contact file
 
-`contacts outreach --file` reads JSONL or CSV. `--file -` reads stdin. Do not combine `--file` with `--email` or `--profile-url`.
+`contacts outreach --file <path>` reads JSONL or CSV; `--file -` reads stdin. Each row is one API call. JSONL rows use `email` and/or `profileUrl` (`profile_url` also works). CSV needs a header with `email` and/or `profile_url`. At most 5 profile URLs per row. The file must be a regular file of at most 5 MiB and 10,000 rows. A malformed file exits 1 before any request.
 
-JSONL objects use `email` and/or `profileUrl` (`profile_url` is also accepted). CSV needs a header row with `email` and/or `profile_url`. Each row is one API call. At most 5 profile URLs per row.
+Output is one JSON line per row: `{ "input": {…}, …response }`, or `{ "input": {…}, "error": { "status", "message" } }`. The run continues past a failed row and exits with the highest exit code it saw.
 
-Stdout is JSONL. A successful row is `{ "input": { … }, …response }`. A failed row is `{ "input": { … }, "error": { "status", "message" } }`. The command keeps going after a per-row HTTP error and exits with the highest code from the run. A malformed file exits 1 before any request.
+## Output
 
-### Writes and the signing secret
+Success prints pretty JSON on stdout, followed by a one-line summary for some commands. `--json` prints compact JSON with no summary; with `--all` or `--file` it prints JSONL. Errors go to stderr.
 
-These commands exit 1 without calling the API unless you pass `--yes`:
+Text from the API is printed with terminal control characters (ANSI escapes, C1 controls, bidi overrides) replaced by visible `\uXXXX` escapes, so a response cannot drive your terminal. In JSON output those escapes decode to the same value.
 
-- `sources retry-syncs` re-queues recorded errors from the last 30 days for that source, once per source per 24 hours.
-- `blocklists resync` reloads the list from the CRM.
-- `webhooks delete` soft-deletes the endpoint. The API cannot restore it.
-- `webhooks rotate-secret` replaces the signing secret. The previous secret stops verifying.
-
-`syncs retry`, `destinations replay`, `blocklists pause`, `webhooks create`, `webhooks update`, `webhooks test`, and `webhooks replay` do not use that gate.
-
-`webhooks create` and `webhooks rotate-secret` print the `oswhsec_…` signing secret on stdout once, and a stderr line: `Signing secret shown once; store it now.` Store it somewhere else. A later GET does not return it. On any error, `oswhsec_…` values are redacted.
-
-`webhooks update` needs at least one of `--url`, `--description`, `--event`, or `--active true|false`. `--active` takes the words `true` and `false` so you can disable an endpoint. Repeat `--event` to replace `enabledEvents`. Omit it on create to enable every event.
-
-`webhooks delete` returns `{ "ok": true }` for the API's empty 204.
+`account status` exits 0 even when `ready` is false; the summary says `ready: yes` or `ready: no`.
 
 ## Exit codes
 
 | Code | Meaning |
 | --- | --- |
-| 0 | Success, including `account status` with `ready: false` |
-| 1 | Usage, local validation, or a missing `--yes` |
-| 2 | 401 unauthorized |
-| 3 | 403 forbidden |
-| 4 | 429 after one retry |
-| 5 | 5xx, 504, timeout, network error, or a non-JSON 2xx |
-| 6 | Any other HTTP status |
+| 0 | Success |
+| 1 | Usage or local validation error, including a missing `--yes` |
+| 2 | Unauthorized (HTTP 401) |
+| 3 | Forbidden (HTTP 403): missing `write` scope, connection-scoped key on a webhook command, or a plan feature not enabled |
+| 4 | Rate limited (HTTP 429) |
+| 5 | Server error (5xx), query timeout (504), request timeout, network error, or a 2xx that was not JSON |
+| 6 | Any other HTTP status, including 400, 404, 409, and a redirect |
 
-A 429 is retried once when `Retry-After` fits a 30 second budget, then the command exits 4. One GET 5xx (except 504) is retried once after 1 second. POST, PATCH, and DELETE are not retried. A 504 exits 5 and asks you to narrow `--from` / `--to` or pass `--connection-id`.
-
-The API key is redacted from both streams. On errors, outreach addresses you sent are redacted too. They still appear in a successful response, which is the lookup result.
+A 429 is retried once if `Retry-After` fits in a 30-second budget. A GET that returns 5xx (other than 504) is retried once after 1 second. Writes are never retried on 5xx.
 
 ## Rate limits
 
-General API calls share 120 requests per 60 seconds per account. `contacts outreach` has its own 600 requests per 60 seconds. `--all` and `--file` sleep before the next call only when `X-RateLimit-Remaining` is 1 or 0 and `X-RateLimit-Reset` is present. `X-RateLimit-Reset` is a number of seconds, not a timestamp. If those headers are absent, the CLI does not invent a delay.
+General API calls share 120 requests per 60 seconds per account. `contacts outreach` has its own 600 requests per 60 seconds. `--all` and `--file` pause before the next call only when `X-RateLimit-Remaining` is 0 or 1, for the `X-RateLimit-Reset` seconds (at most 60).
 
-## Publishing
+## Releases
 
-Versions on npm use calendar versioning, `YYYY.M.DDNN`, computed in UTC by `scripts/release-calver.mjs`. The `publish.yml` workflow publishes from `main` with npm trusted publishing (`npm publish --provenance`). It has no `NPM_TOKEN`.
+Every merge to `main` that passes CI publishes a new version to npm automatically, with [npm trusted publishing](https://docs.npmjs.com/trusted-publishers) and provenance. There is no npm token in the repository.
 
-Before the first publish from `main`, a person has to add this repository's `publish.yml` workflow as the trusted publisher for the npm package `outboundsync`. Until that exists, the workflow skips or fails. `package.json` on `main` stays at `0.0.0-dev`; the workflow writes the CalVer version only in the publish job.
+Versions are CalVer in npm-safe semver form, `YYYY.M.DDNN`: UTC date, month without a leading zero, and the day times 100 plus a counter. `2026.11.1700` is the first release on 2026-11-17 and `2026.11.1701` the second. Git tags are `v` plus the version.
 
-Preview the next version locally:
+`package.json` on `main` stays at `0.0.0-dev`. After [CI](.github/workflows/ci.yml) passes on a push to `main`, [publish.yml](.github/workflows/publish.yml) plans the next version, skips if there are no new commits since the last tag, builds and tests, runs `npm publish --provenance`, then pushes the tag and creates the GitHub release. It never runs for pull requests or forks. Preview the next version locally:
 
 ```bash
 npm run release:preview
 ```
 
-## Keeping the command list honest
-
-`src/registry.ts` is the only command list. Help text, the flag allowlist, and the HTTP request are derived from it. `test/contract.test.ts` fails when `test/fixtures/v1.yaml` and the registry disagree.
-
-When the API adds or changes a v1 route, refresh the fixture from the app repo and update the registry in the same change:
+## Development
 
 ```bash
-cp path/to/outboundsync/apps/server/openapi/v1.yaml test/fixtures/v1.yaml
+npm ci
+npm run build
+node dist/outboundsync.js --help
+npm run ci
 ```
 
-The only spec routes intentionally left out of the CLI are `GET /health/live` and `GET /health/ready`. `openapi` covers both `GET /openapi.yaml` and `GET /openapi.json`.
+`src/registry.ts` is the only command list; help, flag validation, and requests are derived from it. `test/contract.test.ts` fails if the registry and the OpenAPI fixture in `test/fixtures/v1.yaml` disagree on routes, and `test/readme.test.ts` fails if the command table above drifts from the registry.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
