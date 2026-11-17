@@ -370,7 +370,7 @@ export const REGISTRY = [
 		flags: [],
 		scope: "write",
 		auth: true,
-		confirm: "POSTs this delivery's payload to the destination URL again. Re-run with --yes.",
+		confirm: "Queues this delivery's payload to be sent to the destination URL again. Re-run with --yes.",
 		help: "Replay one destination delivery. Requires --yes and the write scope.",
 	}),
 	cmd({
@@ -565,7 +565,7 @@ export const REGISTRY = [
 		flags: [],
 		scope: "write",
 		auth: true,
-		confirm: "Sends this event to the webhook's URL again as a new delivery. Re-run with --yes.",
+		confirm: "Queues a new delivery of this event to the webhook's URL. Re-run with --yes.",
 		help: "Replay one platform webhook delivery. Requires --yes, the write scope, and an account-scoped key.",
 	}),
 	cmd({
