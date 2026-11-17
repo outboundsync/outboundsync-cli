@@ -7,9 +7,8 @@ on:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: write
-  id-token: write
+# Nothing by default; the publish job asks for exactly what it uses.
+permissions: {}
 
 concurrency:
   group: calver-publish
@@ -17,11 +16,20 @@ concurrency:
 
 jobs:
   publish:
+    # Never publishes from a PR or a fork: a manual run must be on main, and a CI-triggered run
+    # must come from a successful push to main in this repository (not a pull_request run, and
+    # not a fork whose branch happens to be called main).
     if: >-
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
-      || (github.event.workflow_run.conclusion == 'success'
-        && github.event.workflow_run.event == 'push')
+      || (github.event_name == 'workflow_run'
+        && github.event.workflow_run.conclusion == 'success'
+        && github.event.workflow_run.event == 'push'
+        && github.event.workflow_run.head_branch == 'main'
+        && github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the release tag and create the GitHub release
+      id-token: write # npm trusted publishing (OIDC) and provenance
     timeout-minutes: 25
     env:
       RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
@@ -35,7 +43,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
           cache: npm
 
