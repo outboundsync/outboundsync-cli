@@ -18,15 +18,21 @@ export function rootHelp(): string {
 	lines.push(
 		"",
 		"Auth:",
-		`  ${TOKEN_ENV} or --token. The key is not stored.`,
+		`  ${TOKEN_ENV} (preferred) or --token. The key is not stored or printed.`,
+		"  A --token value is visible in shell history and the process list.",
 		`  ${BASE_URL_ENV} or --base-url. Default ${DEFAULT_BASE_URL}.`,
 		"",
 		"Global flags:",
 		"  --token <key>       API key. Overrides the environment variable.",
-		"  --base-url <url>    API base, including /api/v1.",
+		"  --base-url <url>    https API base, including /api/v1.",
 		"  --json              Compact JSON on stdout. No human summary.",
 		"  -h, --help          Show help.",
 		"  -V, --version       Show the version.",
+		"",
+		"Write commands do nothing without --yes.",
+		"",
+		"Exit codes: 0 ok · 1 usage · 2 unauthorized (401) · 3 forbidden (403)",
+		"            4 rate limited (429) · 5 server, timeout, or network · 6 other HTTP error",
 		"",
 	);
 	return lines.join("\n");

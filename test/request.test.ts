@@ -36,7 +36,7 @@ describe("requests", () => {
 
 	it("builds a webhook create body", async () => {
 		const result = await run({
-			argv: ["webhooks", "create", "--url", "https://example.com/hook", "--event", "sync.failed", "--event", "sync.succeeded"],
+			argv: ["webhooks", "create", "--url", "https://example.com/hook", "--event", "sync.failed", "--event", "sync.succeeded", "--yes"],
 			responses: [{ status: 201, body: { id: "oswhk_1", secret: "oswhsec_once" } }],
 		});
 		assert.equal(result.code, 0);
@@ -51,11 +51,11 @@ describe("requests", () => {
 	});
 
 	it("sends isActive false and requires a field on update", async () => {
-		const missing = await run({ argv: ["webhooks", "update", "oswhk_1"] });
+		const missing = await run({ argv: ["webhooks", "update", "oswhk_1", "--yes"] });
 		assert.equal(missing.code, 1);
 		assert.equal(missing.calls.length, 0);
 		const result = await run({
-			argv: ["webhooks", "update", "oswhk_1", "--active", "false"],
+			argv: ["webhooks", "update", "oswhk_1", "--active", "false", "--yes"],
 			responses: [{ status: 200, body: { id: "oswhk_1", isActive: false } }],
 		});
 		assert.equal(result.code, 0);
@@ -64,7 +64,7 @@ describe("requests", () => {
 	});
 
 	it("rejects a non-https webhook url", async () => {
-		const result = await run({ argv: ["webhooks", "create", "--url", "http://example.com/hook"] });
+		const result = await run({ argv: ["webhooks", "create", "--url", "http://example.com/hook", "--yes"] });
 		assert.equal(result.code, 1);
 		assert.equal(result.calls.length, 0);
 		assert.match(result.stderr, /https/);

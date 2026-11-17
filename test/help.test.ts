@@ -52,9 +52,9 @@ describe("help", () => {
 		}
 	});
 
-	it("offers --yes only on the gated writes", async () => {
-		const gated = await run({ argv: ["webhooks", "delete", "--help"] });
-		const open = await run({ argv: ["syncs", "retry", "--help"] });
+	it("offers --yes on every write and no read", async () => {
+		const gated = await run({ argv: ["syncs", "retry", "--help"] });
+		const open = await run({ argv: ["syncs", "get", "--help"] });
 		assert.match(gated.stdout, /--yes/);
 		assert.doesNotMatch(open.stdout, /--yes/);
 	});

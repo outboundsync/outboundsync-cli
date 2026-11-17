@@ -185,7 +185,9 @@ paths:
       description: |
         Point-in-time setup / wizard status for connections the key can access.
         Answers whether sources are created, OutboundSync tests succeeded, and
-        live SEP traffic has been received — not whether live sync is entitled.
+        live SEP traffic has been received. Each connection also reports
+        `syncEntitled`; whether it can live-sync right now (entitled and sync
+        enabled) is `GET /api/v1/account/status`.
 
         Do not confuse with `GET /api/v1/account/status`, which answers whether
         a connection may live-sync (CRM OAuth + entitlement + ≥1 source).
@@ -1915,7 +1917,7 @@ components:
       properties:
         schema_version:
           type: integer
-          description: Version of this response contract. Currently 2.
+          description: Version of this response contract. Currently 3.
         status:
           type: string
           description: Always "operational" when the process is reachable.
@@ -1926,7 +1928,7 @@ components:
       properties:
         schema_version:
           type: integer
-          description: Version of this response contract. Currently 2.
+          description: Version of this response contract. Currently 3.
         status:
           type: string
           enum: [operational, partial_outage, major_outage]

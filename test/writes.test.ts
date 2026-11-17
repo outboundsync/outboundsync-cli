@@ -1,14 +1,31 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { REGISTRY } from "../dist/outboundsync.js";
 import { run } from "./helpers.ts";
 
 describe("writes", () => {
 	const gated = [
 		["sources", "retry-syncs", "4"],
+		["syncs", "retry", "9"],
+		["destinations", "replay", "3", "900"],
+		["blocklists", "pause", "8"],
 		["blocklists", "resync", "8"],
+		["webhooks", "create", "--url", "https://example.com/hook"],
+		["webhooks", "update", "oswhk_1", "--active", "false"],
 		["webhooks", "delete", "oswhk_1"],
 		["webhooks", "rotate-secret", "oswhk_1"],
+		["webhooks", "test", "oswhk_1"],
+		["webhooks", "replay", "oswhk_1", "oswhd_1"],
 	];
+
+	it("gates every write-scope command in the registry", () => {
+		const writes = REGISTRY.filter((command) => command.scope === "write").map((command) => command.words.join(" "));
+		const covered = gated.map((argv) => argv.slice(0, 2).join(" "));
+		assert.deepEqual([...writes].sort(), [...covered].sort());
+		for (const command of REGISTRY) {
+			if (command.scope === "write") assert.ok("confirm" in command && command.confirm, `${command.id} has no --yes gate`);
+		}
+	});
 
 	for (const argv of gated) {
 		it(`requires --yes for ${argv.join(" ")} and does not fetch`, async () => {
@@ -29,9 +46,9 @@ describe("writes", () => {
 		assert.equal(result.calls[0]?.method, "POST");
 	});
 
-	it("retries one sync without --yes", async () => {
+	it("retries one sync with --yes", async () => {
 		const result = await run({
-			argv: ["syncs", "retry", "9"],
+			argv: ["syncs", "retry", "9", "--yes"],
 			responses: [{ status: 201, body: { queued: true, syncId: 9 } }],
 		});
 		assert.equal(result.code, 0);

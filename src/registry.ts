@@ -184,7 +184,7 @@ export const REGISTRY = [
 		auth: true,
 		confirm:
 			"Re-queues every recorded error from the last 30 days for this source, once per source per 24 hours. Re-run with --yes.",
-		help: "Bulk-retry failed syncs for one source. Requires --yes and the write scope.",
+		help: "Bulk-retry failed HubSpot and Salesforce syncs for one source. Requires --yes and the write scope.",
 	}),
 	cmd({
 		id: "contacts.outreach",
@@ -200,7 +200,7 @@ export const REGISTRY = [
 			},
 			{
 				name: "profile-url",
-				help: "Profile URL. Repeat up to 5 times.",
+				help: "LinkedIn (/in/ or /pub/) or X profile URL. Repeat up to 5 times.",
 				query: "profileUrl",
 				repeatable: true,
 			},
@@ -294,7 +294,8 @@ export const REGISTRY = [
 		flags: [],
 		scope: "write",
 		auth: true,
-		help: "Queue one failed sync again. Requires the write scope.",
+		confirm: "Re-queues this failed sync to the CRM. Re-run with --yes.",
+		help: "Re-queue one failed HubSpot or Salesforce sync. Requires --yes and the write scope.",
 	}),
 	cmd({
 		id: "destinations.list",
@@ -369,7 +370,8 @@ export const REGISTRY = [
 		flags: [],
 		scope: "write",
 		auth: true,
-		help: "Replay one destination delivery. Requires the write scope.",
+		confirm: "POSTs this delivery's payload to the destination URL again. Re-run with --yes.",
+		help: "Replay one destination delivery. Requires --yes and the write scope.",
 	}),
 	cmd({
 		id: "deliveries.list",
@@ -411,7 +413,8 @@ export const REGISTRY = [
 		flags: [],
 		scope: "write",
 		auth: true,
-		help: "Pause one block list. Requires the write scope.",
+		confirm: "Stops fetching and pushing this block list. It does not clear the list in the sequencer. Re-run with --yes.",
+		help: "Pause one block list. Requires --yes and the write scope.",
 	}),
 	cmd({
 		id: "blocklists.resync",
@@ -422,7 +425,7 @@ export const REGISTRY = [
 		flags: [],
 		scope: "write",
 		auth: true,
-		confirm: "Reloads this block list from the CRM and pushes it again. Re-run with --yes.",
+		confirm: "Enables this block list and queues a full reload from the CRM. Re-run with --yes.",
 		help: "Reload one block list from the CRM. Requires --yes and the write scope.",
 	}),
 	cmd({
@@ -467,8 +470,9 @@ export const REGISTRY = [
 		],
 		scope: "write",
 		auth: true,
+		confirm: "Registers this URL to receive OutboundSync platform events. Re-run with --yes.",
 		secretOnce: true,
-		help: "Create a platform webhook endpoint. The signing secret is printed once. Requires the write scope and an account-scoped key.",
+		help: "Create a platform webhook endpoint. The signing secret is printed once. Requires --yes, the write scope, and an account-scoped key.",
 	}),
 	cmd({
 		id: "webhooks.update",
@@ -495,7 +499,8 @@ export const REGISTRY = [
 		],
 		scope: "write",
 		auth: true,
-		help: "Update a platform webhook endpoint. Pass at least one field. Requires the write scope and an account-scoped key.",
+		confirm: "Changes this webhook's URL, events, label, or active state. Re-run with --yes.",
+		help: "Update a platform webhook endpoint. Pass at least one field. Requires --yes, the write scope, and an account-scoped key.",
 	}),
 	cmd({
 		id: "webhooks.delete",
@@ -521,7 +526,7 @@ export const REGISTRY = [
 		auth: true,
 		confirm: "Replaces the signing secret. The previous secret stops working. Re-run with --yes.",
 		secretOnce: true,
-		help: "Rotate a webhook signing secret. The new secret is printed once. Requires --yes.",
+		help: "Rotate a webhook signing secret. The new secret is printed once. Requires --yes, the write scope, and an account-scoped key.",
 	}),
 	cmd({
 		id: "webhooks.test",
@@ -532,7 +537,8 @@ export const REGISTRY = [
 		flags: [],
 		scope: "write",
 		auth: true,
-		help: "Send a sample webhook.event.test delivery. Requires the write scope.",
+		confirm: "Queues a test.ping delivery to this webhook's URL. Re-run with --yes.",
+		help: "Queue a test.ping delivery to one platform webhook. Requires --yes, the write scope, and an account-scoped key.",
 	}),
 	cmd({
 		id: "webhooks.deliveries",
@@ -559,7 +565,8 @@ export const REGISTRY = [
 		flags: [],
 		scope: "write",
 		auth: true,
-		help: "Replay one platform webhook delivery. Requires the write scope.",
+		confirm: "Sends this event to the webhook's URL again as a new delivery. Re-run with --yes.",
+		help: "Replay one platform webhook delivery. Requires --yes, the write scope, and an account-scoped key.",
 	}),
 	cmd({
 		id: "events.list",
@@ -574,14 +581,14 @@ export const REGISTRY = [
 				query: "type",
 				repeatable: true,
 			},
-			enumQuery("delivered", "delivered", ["true", "false"], "true for delivered events, false for the rest."),
+			enumQuery("delivered", "delivered", ["true", "false"], "true for events with at least one successful delivery, false for the rest."),
 		],
 		paginated: "webhook",
 		scope: "read",
 		auth: true,
 		summary: "list",
 		summaryKey: "data",
-		help: "List platform events. Requires an account-scoped key.",
+		help: "List platform events. Connection-scoped keys see their connection's events plus account-level events.",
 	}),
 	cmd({
 		id: "events.get",
@@ -592,7 +599,7 @@ export const REGISTRY = [
 		flags: [],
 		scope: "read",
 		auth: true,
-		help: "Show one platform event. Requires an account-scoped key.",
+		help: "Show one platform event and its deliveries. Connection-scoped keys see their connection's events plus account-level events.",
 	}),
 ] as const;
 
