@@ -1,9 +1,10 @@
-import { DEFAULT_BASE_URL, REQUEST_TIMEOUT_MS, RETRY_BUDGET_MS } from "./const";
+import { DEFAULT_BASE_URL, EXIT, REQUEST_TIMEOUT_MS, RETRY_BUDGET_MS } from "./const";
 import {
 	ApiFailure,
 	classifyHttpError,
 	networkMessage,
 	nonJsonMessage,
+	redirectMessage,
 	timeoutMessage,
 } from "./errors";
 import { isRecord } from "./record";
@@ -65,6 +66,8 @@ export async function apiRequest(input: ApiRequest): Promise<ApiResult> {
 				headers,
 				body: payload,
 				signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+				// Never follow a redirect: the Authorization header must not reach another URL.
+				redirect: "manual",
 			});
 		} catch (error) {
 			const aborted =
@@ -87,7 +90,11 @@ export async function apiRequest(input: ApiRequest): Promise<ApiResult> {
 		const text = await response.text();
 		const status = response.status;
 
-		if (status >= 200 && status < 400) {
+		if (status >= 300 && status < 400) {
+			throw new ApiFailure(redirectMessage(input.method, path, status), EXIT.http, status, undefined);
+		}
+
+		if (status >= 200 && status < 300) {
 			if (status === 204 || status === 205) {
 				return { status, body: { ok: true }, text, raw: false, rateLimitRemaining, rateLimitReset };
 			}

@@ -41,7 +41,7 @@ describe("client", () => {
 		assert.equal(read.calls.length, 2);
 		assert.deepEqual(read.sleeps, [1000]);
 		const write = await run({
-			argv: ["syncs", "retry", "9"],
+			argv: ["syncs", "retry", "9", "--yes"],
 			responses: [{ status: 500, body: { message: "boom" } }],
 		});
 		assert.equal(write.code, 5);
@@ -49,14 +49,14 @@ describe("client", () => {
 		assert.deepEqual(write.sleeps, []);
 	});
 
-	it("does not retry a 504 and tells the caller to narrow the range", async () => {
+	it("does not retry a 504 and passes on the API's hint", async () => {
 		const result = await run({
 			argv: ["syncs", "list", "--since", "7d"],
-			responses: [{ status: 504, body: { message: "timeout" } }],
+			responses: [{ status: 504, body: { message: "Request exceeded the 10s query time limit. Narrow the from/to window or pass connectionId." } }],
 		});
 		assert.equal(result.code, 5);
 		assert.equal(result.calls.length, 1);
-		assert.match(result.stderr, /narrow --from\/--to or pass --connection-id/);
+		assert.match(result.stderr, /Narrow the from\/to window or pass connectionId\./);
 	});
 
 	it("hides a non-JSON success body", async () => {
@@ -121,7 +121,7 @@ describe("client", () => {
 		assert.match(bulk.stderr, /2026-08-14T00:00:00.000Z/);
 		assert.match(bulk.stderr, /syncs retry <id>/);
 		const other = await run({
-			argv: ["syncs", "retry", "4"],
+			argv: ["syncs", "retry", "4", "--yes"],
 			responses: [{ status: 409, body: { message: "not failed" } }],
 		});
 		assert.equal(other.code, 6);

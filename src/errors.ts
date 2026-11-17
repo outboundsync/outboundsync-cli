@@ -36,7 +36,7 @@ export function forbiddenRemediation(detail: string | undefined): string {
 		return "Platform webhooks (Sync Monitoring) are not enabled for this account. Ask an OutboundSync admin or support to enable them; there is no API call for this.";
 	}
 	if (/block ?lists are not enabled/i.test(text)) {
-		return "Block lists are not enabled for this connection's plan. Enable them in the OutboundSync dashboard before resyncing.";
+		return "Block lists are not included for this connection (the canBlockList entitlement comes from the plan). Ask an OutboundSync admin or support; there is no API call for this.";
 	}
 	if (/write/i.test(text)) {
 		return "This command needs an API key with the write scope. Keys created under Platform access → API keys are read-only; ask OutboundSync support to issue a write-scoped key.";
@@ -97,7 +97,8 @@ export function classifyHttpError(
 	if (status === 504) {
 		return {
 			exitCode: EXIT.server,
-			message: `${withPeriod(detail ?? `OutboundSync API exceeded its query time limit for ${method} ${path}.`)} narrow --from/--to or pass --connection-id.`,
+			// The API's own 504 message already names the right fix for that endpoint.
+			message: detail ?? `OutboundSync API exceeded its query time limit for ${method} ${path}. Narrow the --from/--to window and retry.`,
 		};
 	}
 	if (status >= 500) {
@@ -110,6 +111,10 @@ export function classifyHttpError(
 		exitCode: EXIT.http,
 		message: detail ?? `OutboundSync API returned HTTP ${status} for ${method} ${path}.`,
 	};
+}
+
+export function redirectMessage(method: string, path: string, status: number): string {
+	return `OutboundSync API answered ${method} ${path} with a redirect (HTTP ${status}). The CLI does not follow redirects, so the API key is never sent to another URL. Check --base-url or OUTBOUNDSYNC_API_BASE_URL.`;
 }
 
 export function timeoutMessage(method: string, path: string): string {

@@ -1,16 +1,16 @@
 import { realpathSync } from "node:fs";
-import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { defaultSleep, apiRequest, type ApiResult } from "./client";
 import { BASE_URL_ENV, DEFAULT_BASE_URL, EXIT, TOKEN_ENV, type ExitCode } from "./const";
 import { ApiFailure, nonJsonMessage } from "./errors";
 import { commandHelp, commandUsage, groupHelp, rootHelp } from "./help";
-import { loadOutreachRows } from "./outreach-file";
+import { loadOutreachRows, MAX_INPUT_BYTES, readBoundedFile } from "./outreach-file";
 import { humanSummary, readPage } from "./output";
 import { maxPages, paceDelayMs } from "./paginate";
 import { assertKnownFlags, flagBool, flagString, parseArgv, type FlagMap } from "./parse";
 import { isRecord } from "./record";
 import { REGISTRY, resolveCommand, type CommandSpec } from "./registry";
+import { safeTerminalText } from "./terminal";
 import { buildOutreachQuery, buildRequest, type BuiltRequest, type OutreachInput } from "./request";
 import { UsageError } from "./usage";
 import { getPackageVersion } from "./version";
@@ -27,7 +27,13 @@ export interface CliIo {
 	sleep?: (ms: number) => Promise<void>;
 }
 
-export async function runCli(io: CliIo): Promise<number> {
+export async function runCli(rawIo: CliIo): Promise<number> {
+	// Every byte the CLI prints passes through here, so API-controlled text cannot drive the terminal.
+	const io: CliIo = {
+		...rawIo,
+		stdout: (text) => rawIo.stdout(safeTerminalText(text)),
+		stderr: (text) => rawIo.stderr(safeTerminalText(text)),
+	};
 	const secrets = collectSecrets(io);
 	try {
 		return await dispatch(io, secrets);
@@ -296,17 +302,38 @@ function clock(io: CliIo): Date {
 
 function requireToken(flags: FlagMap, env: NodeJS.ProcessEnv): string {
 	const flag = flagString(flags, "token")?.trim();
-	if (flag) return flag;
 	const fromEnv = env[TOKEN_ENV];
-	if (typeof fromEnv === "string" && fromEnv.trim()) return fromEnv.trim();
-	throw new UsageError(`missing API key: set ${TOKEN_ENV} or pass --token`);
+	const token = flag || (typeof fromEnv === "string" ? fromEnv.trim() : "");
+	if (!token) throw new UsageError(`missing API key: set ${TOKEN_ENV} or pass --token`);
+	// Never echo the value. Whitespace or control characters would also break the header.
+	if (!/^[\x21-\x7e]+$/.test(token)) throw new UsageError("the API key contains whitespace or non-printable characters");
+	return token;
 }
 
-function resolveBaseUrl(flags: FlagMap, env: NodeJS.ProcessEnv): string {
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/**
+ * The key is only ever sent to this origin. Require https so it never crosses the network in
+ * clear text; plain http is allowed only for a loopback dev server.
+ */
+export function resolveBaseUrl(flags: FlagMap, env: NodeJS.ProcessEnv): string {
 	const flag = flagString(flags, "base-url")?.trim();
 	const fromEnv = env[BASE_URL_ENV];
 	const raw = flag || (typeof fromEnv === "string" && fromEnv.trim() ? fromEnv.trim() : DEFAULT_BASE_URL);
-	return raw.replace(/\/+$/, "");
+	let url: URL;
+	try {
+		url = new URL(raw);
+	} catch {
+		throw new UsageError("--base-url must be an absolute https URL");
+	}
+	const loopback = LOOPBACK_HOSTS.has(url.hostname);
+	if (url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) {
+		throw new UsageError("--base-url must use https (http is allowed only for localhost)");
+	}
+	if (url.username || url.password || url.search || url.hash) {
+		throw new UsageError("--base-url must not include credentials, a query string, or a fragment");
+	}
+	return `${url.origin}${url.pathname}`.replace(/\/+$/, "");
 }
 
 function flagStringsPresent(flags: FlagMap, name: string): boolean {
@@ -360,8 +387,17 @@ function launchedAsCli(): boolean {
 async function readStdin(): Promise<string> {
 	if (process.stdin.isTTY) return "";
 	const chunks: Buffer[] = [];
+	let size = 0;
 	for await (const chunk of process.stdin) {
-		chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+		const buffer = typeof chunk === "string" ? Buffer.from(chunk) : (chunk as Buffer);
+		size += buffer.length;
+		// Stop reading once over the cap; loadOutreachRows rejects the oversized text.
+		if (size > MAX_INPUT_BYTES) {
+			chunks.push(buffer);
+			process.stdin.destroy();
+			break;
+		}
+		chunks.push(buffer);
 	}
 	return Buffer.concat(chunks).toString("utf8");
 }
@@ -376,7 +412,7 @@ function wantsStdin(argv: readonly string[]): boolean {
 }
 
 async function readFileUtf8(filePath: string): Promise<string> {
-	return readFile(filePath, "utf8");
+	return readBoundedFile(filePath);
 }
 
 if (launchedAsCli()) {

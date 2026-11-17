@@ -40,6 +40,9 @@ export function buildRequest(
 		const value = args[index] ?? "";
 		if (arg.kind === "integer") assertPositiveInteger(value, `<${arg.name}>`);
 		else if (value.trim() === "") throw new UsageError(`<${arg.name}> is required`);
+		// encodeURIComponent leaves "." and ".." alone, and URL parsing would resolve them to a
+		// different route, so a write could land on another endpoint.
+		else if (value === "." || value === "..") throw new UsageError(`<${arg.name}> is not a valid id`);
 		path = path.replaceAll(`{${arg.param}}`, encodeURIComponent(value));
 	});
 
@@ -149,6 +152,9 @@ function writeBody(spec: FlagSpec, flags: FlagMap, body: Record<string, unknown>
 	}
 	if (field === "url" && !isHttpsUrl(value)) {
 		throw new UsageError("--url must be an https URL");
+	}
+	if (field === "url" && value.length > 2048) {
+		throw new UsageError("--url must be 2048 characters or fewer");
 	}
 	if (field === "description" && value.length > 500) {
 		throw new UsageError("--description must be 500 characters or fewer");

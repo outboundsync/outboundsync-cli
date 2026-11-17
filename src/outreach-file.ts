@@ -1,16 +1,49 @@
+import { open } from "node:fs/promises";
 import { isRecord } from "./record";
 import type { OutreachInput } from "./request";
 import { UsageError } from "./usage";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** Largest --file input, from disk or stdin. 5 MiB is far more than MAX_ROWS rows need. */
+export const MAX_INPUT_BYTES = 5 * 1024 * 1024;
+/** Each row is one API call. 10,000 rows is about 17 minutes at the 600/min outreach limit. */
+export const MAX_ROWS = 10_000;
+
+/**
+ * Read a --file path as UTF-8. Only regular files are accepted (no directories, FIFOs or devices
+ * such as /dev/zero), and the size is checked on the open handle before any bytes are read.
+ */
+export async function readBoundedFile(filePath: string): Promise<string> {
+	let handle: Awaited<ReturnType<typeof open>>;
+	try {
+		handle = await open(filePath, "r");
+	} catch (error) {
+		const code = (error as NodeJS.ErrnoException).code;
+		throw new UsageError(code === "ENOENT" ? "--file: no such file" : `--file: cannot open (${code ?? "error"})`);
+	}
+	try {
+		const info = await handle.stat();
+		if (!info.isFile()) throw new UsageError("--file must be a regular file");
+		if (info.size > MAX_INPUT_BYTES) throw new UsageError(`--file is larger than ${MAX_INPUT_BYTES} bytes`);
+		// loadOutreachRows re-checks the byte length, which covers a file that grew after stat().
+		return await handle.readFile("utf8");
+	} finally {
+		await handle.close();
+	}
+}
+
 export function loadOutreachRows(text: string): OutreachInput[] {
+	if (Buffer.byteLength(text, "utf8") > MAX_INPUT_BYTES) {
+		throw new UsageError(`--file input is larger than ${MAX_INPUT_BYTES} bytes`);
+	}
 	const stripped = text.replace(/^\uFEFF/, "");
 	const first = firstNonEmpty(stripped);
 	if (!first) throw new UsageError("file is empty");
 	if (first.startsWith("[")) throw new UsageError("file must be JSONL or CSV, not a JSON array");
-	if (first.startsWith("{")) return loadJsonl(stripped);
-	return loadCsv(stripped);
+	const rows = first.startsWith("{") ? loadJsonl(stripped) : loadCsv(stripped);
+	if (rows.length > MAX_ROWS) throw new UsageError(`--file has ${rows.length} rows; the maximum is ${MAX_ROWS}`);
+	return rows;
 }
 
 function loadJsonl(text: string): OutreachInput[] {
