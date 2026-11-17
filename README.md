@@ -154,6 +154,8 @@ Text from the API is printed with terminal control characters (ANSI escapes, C1 
 | 5 | Server error (5xx), query timeout (504), request timeout, network error, or a 2xx that was not JSON |
 | 6 | Any other HTTP status, including 400, 404, 409, and a redirect |
 
+Codes match the KingMinos CLI (`kingminos`) except 3: there it means out of credits (HTTP 402), because KingMinos bills credits per call. OutboundSync has no credits error, so 3 is a 403.
+
 A 429 is retried once if `Retry-After` fits in a 30-second budget. A GET that returns 5xx (other than 504) is retried once after 1 second. Writes are never retried on 5xx.
 
 ## Rate limits
