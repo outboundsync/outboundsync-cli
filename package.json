@@ -16,7 +16,7 @@
     "node": ">=20"
   },
   "bin": {
-    "outboundsync": "./dist/outboundsync.js"
+    "outboundsync": "dist/outboundsync.js"
   },
   "files": [
     "dist",
