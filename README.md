@@ -162,6 +162,12 @@ A 429 is retried once if `Retry-After` fits in a 30-second budget. A GET that re
 
 General API calls share 120 requests per 60 seconds per account. `contacts outreach` has its own 600 requests per 60 seconds. `--all` and `--file` pause before the next call only when `X-RateLimit-Remaining` is 0 or 1, for the `X-RateLimit-Reset` seconds (at most 60).
 
+## API sync
+
+The commands follow the live OutboundSync contract, [`openapi.json`](https://app.outboundsync.com/api/v1/openapi.json). Every 6 hours the [API sync](.github/workflows/api-sync.yml) workflow compares it with `api-sync/openapi.snapshot.json`. When it changed, a Cursor CLI agent ([prompt](.github/prompts/api-sync.md)) updates the registry, tests and command table, the workflow writes the new snapshot, and it opens or updates a PR on `chore/api-sync`. A human reviews and merges every sync PR; merging publishes a new npm version. See [`api-sync/README.md`](api-sync/README.md).
+
+`npm run check:api-coverage` (in CI) fails when an operation in the snapshot has no command in `src/registry.ts`, a command's route isn't in the snapshot, or a write command has no `confirm` (`--yes`). Only `GET /health/live` and `GET /health/ready` are left out, and `openapi` covers both spec documents. Until the first sync PR adds the snapshot, the check skips.
+
 ## Releases
 
 Every merge to `main` that passes CI publishes a new version to npm automatically, with [npm trusted publishing](https://docs.npmjs.com/trusted-publishers) and provenance. There is no npm token in the repository.
@@ -183,7 +189,7 @@ node dist/outboundsync.js --help
 npm run ci
 ```
 
-`src/registry.ts` is the only command list; help, flag validation, and requests are derived from it. `test/contract.test.ts` fails if the registry and the OpenAPI fixture in `test/fixtures/v1.yaml` disagree on routes, and `test/readme.test.ts` fails if the command table above drifts from the registry.
+`src/registry.ts` is the only command list; help, flag validation, and requests are derived from it. `test/contract.test.ts` fails if the registry and the OpenAPI snapshot in `api-sync/openapi.snapshot.json` (or, until it exists, the fixture in `test/fixtures/v1.yaml`) disagree on routes, and `test/readme.test.ts` fails if the command table above drifts from the registry.
 
 ## License
 
