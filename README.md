@@ -189,7 +189,7 @@ node dist/outboundsync.js --help
 npm run ci
 ```
 
-`src/registry.ts` is the only command list; help, flag validation, and requests are derived from it. `test/contract.test.ts` fails if the registry and the OpenAPI snapshot in `api-sync/openapi.snapshot.json` (or, until it exists, the fixture in `test/fixtures/v1.yaml`) disagree on routes, and `test/readme.test.ts` fails if the command table above drifts from the registry.
+`src/registry.ts` is the only command list; help, flag validation, and requests are derived from it. `test/contract.test.ts` fails if the registry and the OpenAPI snapshot in `api-sync/openapi.snapshot.json` disagree on routes, and `test/readme.test.ts` fails if the command table above drifts from the registry.
 
 `commands.json` is the command reference as data, for the website's CLI docs: every command's id, usage, summary, method, OpenAPI path, flags (name, help, whether it is required, allowed values), whether it writes and whether it needs a key, sorted by id (schema `cli.commands.v1`, shared with the [KingMinos CLI](https://github.com/outboundsync/kingminos-cli)). It has no version or date, so it changes only when a command does. Read it from GitHub (`https://raw.githubusercontent.com/outboundsync/outboundsync-cli/main/commands.json`) or the npm package (`outboundsync/commands.json`). After changing `src/registry.ts`, run `npm run commands:json`; `test/commands-json.test.ts` fails when the committed file is out of date.
 

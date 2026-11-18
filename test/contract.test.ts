@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { parse } from "yaml";
 import { REGISTRY } from "../dist/outboundsync.js";
 
 const HTTP = new Set(["get", "post", "put", "patch", "delete", "options", "head", "trace"]);
@@ -10,20 +9,16 @@ const ALLOW = new Set(["GET /health/live", "GET /health/ready"]);
 
 const ROOT = new URL("../", import.meta.url);
 const SNAPSHOT = new URL("api-sync/openapi.snapshot.json", ROOT);
-// Legacy hand-kept copy of the spec. Used only until the first "API sync" PR
-// adds the snapshot; it will be deleted after that.
-const FIXTURE = new URL("fixtures/v1.yaml", import.meta.url);
 
 /**
  * The spec to check against: API_SYNC_SPEC (set by the API sync workflow while
- * its agent works against the live spec), then the synced snapshot, then the
- * legacy YAML fixture.
+ * its agent works against the live spec), then the synced snapshot.
  */
 function loadSpec(): { source: string; doc: { paths: Record<string, Record<string, unknown>> } } {
 	const override = process.env.API_SYNC_SPEC;
-	const file = override ? new URL(override, ROOT) : existsSync(SNAPSHOT) ? SNAPSHOT : FIXTURE;
-	const text = readFileSync(file, "utf8");
-	const doc = file === FIXTURE ? parse(text) : JSON.parse(text);
+	const file = override ? new URL(override, ROOT) : SNAPSHOT;
+	assert.ok(existsSync(file), `missing ${fileURLToPath(file)}; run the API sync workflow`);
+	const doc = JSON.parse(readFileSync(file, "utf8"));
 	return { source: fileURLToPath(file), doc };
 }
 
