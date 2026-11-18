@@ -23,7 +23,7 @@ The live spec, canonicalised with `jq -S .`, is at `$RUNNER_TEMP/openapi.live.js
 
 ## What to update
 
-Only edit `src/**`, `test/**` (not `test/package.test.ts`, `test/commands-json.test.ts`, `test/check-api-coverage.test.mjs`, `test/release-calver.test.mjs` or `test/fixtures/v1.yaml`) and `README.md`.
+Only edit `src/**`, `test/**` (not `test/package.test.ts`, `test/commands-json.test.ts`, `test/check-api-coverage.test.mjs`, `test/release-calver.test.mjs`) and `README.md`.
 
 `src/registry.ts` is the only command list: help, flag validation and request building are derived from its `REGISTRY` table. For each change in the spec:
 

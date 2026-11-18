@@ -4,7 +4,6 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { parse } from 'yaml';
 
 import { REGISTRY } from '../dist/outboundsync.js';
 import {
@@ -188,11 +187,10 @@ describe('check-api-coverage', () => {
 	});
 
 	it('passes for the real registry against the current spec', () => {
-		// API_SYNC_SPEC, then the snapshot, then the legacy YAML fixture (until the snapshot exists).
+		// API_SYNC_SPEC, then the synced snapshot.
 		const specPath = resolveSpecPath([], process.env, ROOT);
-		const doc = existsSync(specPath)
-			? JSON.parse(readFileSync(specPath, 'utf8'))
-			: parse(readFileSync(path.join(ROOT, 'test/fixtures/v1.yaml'), 'utf8'));
+		assert.ok(existsSync(specPath), `missing ${specPath}; run the API sync workflow`);
+		const doc = JSON.parse(readFileSync(specPath, 'utf8'));
 		const { errors } = checkCoverage({
 			spec: doc,
 			registrySource: readFileSync(path.join(ROOT, 'src/registry.ts'), 'utf8'),
