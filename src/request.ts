@@ -31,6 +31,7 @@ export function buildRequest(
 		throw new UsageError(`expected ${command.args.length} argument(s) for ${command.words.join(" ")}`);
 	}
 	let path = command.path;
+	const pii: string[] = [];
 	if (command.id === "openapi") {
 		const format = flagString(flags, "format") ?? "yaml";
 		assertChoice("format", format, ["yaml", "json"]);
@@ -43,11 +44,11 @@ export function buildRequest(
 		// encodeURIComponent leaves "." and ".." alone, and URL parsing would resolve them to a
 		// different route, so a write could land on another endpoint.
 		else if (value === "." || value === "..") throw new UsageError(`<${arg.name}> is not a valid id`);
+		if (arg.name === "email") pii.push(value, encodeURIComponent(value));
 		path = path.replaceAll(`{${arg.param}}`, encodeURIComponent(value));
 	});
 
 	const query: Record<string, string | string[]> = {};
-	const pii: string[] = [];
 	if (command.dateRange === "required") {
 		const range = resolveDateRange(
 			{
@@ -82,6 +83,7 @@ export function buildRequest(
 		if (spec.name === "email" && typeof value === "string") pii.push(value);
 		if (spec.name === "profile-url" && Array.isArray(value)) pii.push(...value);
 	}
+	if (typeof body.email === "string") pii.push(body.email);
 
 	if (command.id === "contacts.outreach") {
 		const file = flagString(flags, "file");
@@ -103,6 +105,9 @@ export function buildRequest(
 	}
 	if (command.id === "webhooks.update" && bodyFields === 0) {
 		throw new UsageError("webhooks update requires --url, --description, --event, or --active");
+	}
+	if (command.id === "workspace.domains.update" && bodyFields === 0) {
+		throw new UsageError("workspace domains update requires --discoverable or --auto-join-enabled");
 	}
 
 	return {
@@ -160,6 +165,12 @@ function writeBody(spec: FlagSpec, flags: FlagMap, body: Record<string, unknown>
 	}
 	if (field === "description" && value.length > 500) {
 		throw new UsageError("--description must be 500 characters or fewer");
+	}
+	if (field === "name" && value.trim() === "") {
+		throw new UsageError("--name is required");
+	}
+	if (field === "name" && value.length > 80) {
+		throw new UsageError("--name must be 80 characters or fewer");
 	}
 	body[field] = value;
 	return 1;

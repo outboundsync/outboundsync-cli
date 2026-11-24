@@ -16,11 +16,26 @@ describe("writes", () => {
 		["webhooks", "rotate-secret", "oswhk_1"],
 		["webhooks", "test", "oswhk_1"],
 		["webhooks", "replay", "oswhk_1", "oswhd_1"],
+		["workspace", "update", "--name", "North Studio"],
+		["workspace", "domains", "create", "--domain", "acme.com"],
+		["workspace", "domains", "update", "acme.com", "--discoverable", "true"],
+		["workspace", "domains", "delete", "acme.com"],
+		["workspace", "invitations", "create", "--email", "teammate@acme.com"],
+		["workspace", "invitations", "delete", "wsi_0123456789abcdefghij"],
+		["workspace", "members", "update", "teammate@acme.com", "--role", "ADMIN"],
+		["workspace", "members", "delete", "teammate@acme.com"],
 	];
 
 	it("gates every write-scope command in the registry", () => {
 		const writes = REGISTRY.filter((command) => command.scope === "write").map((command) => command.words.join(" "));
-		const covered = gated.map((argv) => argv.slice(0, 2).join(" "));
+		const covered = gated.map((argv) => {
+			const matches = REGISTRY.filter(
+				(command) => command.scope === "write" && command.words.every((word, index) => argv[index] === word),
+			).sort((left, right) => right.words.length - left.words.length);
+			const command = matches[0];
+			assert.ok(command, `no write command for ${argv.join(" ")}`);
+			return command.words.join(" ");
+		});
 		assert.deepEqual([...writes].sort(), [...covered].sort());
 		for (const command of REGISTRY) {
 			if (command.scope === "write") assert.ok("confirm" in command && command.confirm, `${command.id} has no --yes gate`);

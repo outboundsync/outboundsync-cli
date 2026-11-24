@@ -41,7 +41,7 @@ export function forbiddenRemediation(detail: string | undefined): string {
 	if (/write/i.test(text)) {
 		return "This command needs an API key with the write scope. Keys created under Platform access → API keys are read-only; ask OutboundSync support to issue a write-scoped key.";
 	}
-	return "If API access is not enabled for any connection on this account, ask OutboundSync support to enable it; there is no API call for this. Write commands also require a key with the write scope; webhook management requires an account-scoped key.";
+	return "If API access is not enabled for any connection on this account, ask OutboundSync support to enable it; there is no API call for this. Write commands also require a key with the write scope; webhook management and workspace commands other than workspace get require an account-scoped key.";
 }
 
 function withPeriod(text: string): string {
