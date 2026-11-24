@@ -40,16 +40,16 @@ describe("help", () => {
 		assert.equal(result.calls.length, 0);
 	});
 
-	it("keeps 38 commands with unique ids, words, and routes", () => {
-		assert.equal(REGISTRY.length, 38);
+	it("keeps 50 commands with unique ids, words, and routes", () => {
+		assert.equal(REGISTRY.length, 50);
 		const ids = new Set(REGISTRY.map((command) => command.id));
 		const words = new Set(REGISTRY.map((command) => command.words.join(" ")));
 		const routes = new Set(
 			REGISTRY.filter((command) => command.id !== "openapi").map((command) => `${command.method} ${command.path}`),
 		);
-		assert.equal(ids.size, 38);
-		assert.equal(words.size, 38);
-		assert.equal(routes.size, 37);
+		assert.equal(ids.size, 50);
+		assert.equal(words.size, 50);
+		assert.equal(routes.size, 49);
 		for (const command of REGISTRY) {
 			assert.ok(command.help.length > 0);
 			assert.ok(flagsFor(command).length >= 0);

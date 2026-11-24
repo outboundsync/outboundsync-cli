@@ -1,6 +1,6 @@
 # outboundsync
 
-Command-line interface for the [OutboundSync](https://outboundsync.com) API v1. It covers the same surface as the OutboundSync MCP server: account, sources, syncs, destinations, block lists, platform webhooks, events, and contact outreach.
+Command-line interface for the [OutboundSync](https://outboundsync.com) API v1. It covers the same surface as the OutboundSync MCP server: account, sources, syncs, destinations, block lists, platform webhooks, events, and contact outreach. It also covers workspace members, invitations, and allowed email domains.
 
 The binary is `outboundsync`. It has no runtime dependencies. API reference: [outboundsync.com/docs/api/v1](https://outboundsync.com/docs/api/v1). Live contract: `outboundsync openapi`.
 
@@ -34,10 +34,11 @@ outboundsync me
 What a key can do:
 
 - **Scope.** Keys created in the dashboard are read-only. Write commands need a key with the `write` scope; ask OutboundSync support for one.
-- **Account vs connection.** A key is either account-wide ("All connections") or scoped to one CRM connection. A connection-scoped key reads and writes that connection's data. `webhooks …` commands need an account-scoped key. `events …` work with either; a connection-scoped key sees its connection's events plus account-level events.
+- **Account vs connection.** A key is either account-wide ("All connections") or scoped to one CRM connection. A connection-scoped key reads and writes that connection's data. `webhooks …` commands need an account-scoped key. `workspace …` commands other than `workspace get` need an account-scoped key. `events …` work with either; a connection-scoped key sees its connection's events plus account-level events.
 - **Plan features.** `webhooks …` and `events …` need platform webhooks on the plan. `blocklists resync` needs block lists on the plan.
+- **Workspace.** A legacy key is rejected. `workspace get` works for a connection-scoped key. Listing invitations needs `members.invite`; other workspace reads need `workspace.read`. Writes need the `write` scope plus `workspace.update`, `domains.manage`, `members.invite`, `members.update_role`, or `members.remove`, depending on the command.
 
-`outboundsync me` shows the key's scopes and connection scope.
+`outboundsync me` shows the key's scopes and connection scope. The JSON also includes `workspace` (`id`, `name`, `role`) for a workspace key, or null for a legacy key.
 
 The API base defaults to `https://app.outboundsync.com/api/v1`. Override it with `OUTBOUNDSYNC_API_BASE_URL` or `--base-url`; the value includes `/api/v1`. It must be `https` (plain `http` is accepted only for `localhost`, `127.0.0.1` or `[::1]`). The CLI does not follow redirects, so the key is only ever sent to that base URL.
 
@@ -85,6 +86,18 @@ The API base defaults to `https://app.outboundsync.com/api/v1`. Override it with
 | `webhooks replay <id> <deliveryId>` | `POST /webhooks/{id}/deliveries/{deliveryId}/replay` | write | account key, `--yes` |
 | `events list` | `GET /events` | read | pages |
 | `events get <id>` | `GET /events/{id}` | read | |
+| `workspace get` | `GET /workspace` | read | |
+| `workspace update` | `PATCH /workspace` | write | account key, `--yes` |
+| `workspace domains` | `GET /workspace/domains` | read | account key |
+| `workspace domains create` | `POST /workspace/domains` | write | account key, `--yes` |
+| `workspace domains update <domain>` | `PATCH /workspace/domains/{domain}` | write | account key, `--yes` |
+| `workspace domains delete <domain>` | `DELETE /workspace/domains/{domain}` | write | account key, `--yes` |
+| `workspace invitations` | `GET /workspace/invitations` | read | account key |
+| `workspace invitations create` | `POST /workspace/invitations` | write | account key, `--yes` |
+| `workspace invitations delete <invitationId>` | `DELETE /workspace/invitations/{invitationId}` | write | account key, `--yes` |
+| `workspace members` | `GET /workspace/members` | read | account key |
+| `workspace members update <email>` | `PATCH /workspace/members/{email}` | write | account key, `--yes` |
+| `workspace members delete <email>` | `DELETE /workspace/members/{email}` | write | account key, `--yes` |
 
 Routes are relative to the base URL. Global flags: `--token`, `--base-url`, `--json`, `-h` / `--help`, `-V` / `--version`.
 
@@ -113,10 +126,11 @@ Every command that needs the `write` scope exits 1 without calling the API unles
 - `destinations replay` and `webhooks replay` send a delivery to its URL again.
 - `blocklists pause` stops fetching and pushing a list (it does not clear the list in the sequencer). `blocklists resync` enables it and queues a full reload from the CRM.
 - `webhooks create`, `update`, `delete`, `rotate-secret`, and `test` manage platform webhook endpoints. `delete` is a soft delete that the API cannot undo. `rotate-secret` stops the old secret verifying at once.
+- `workspace update` renames the workspace (at most 80 characters; `Create new workspace` is reserved). `workspace domains create`, `update`, and `delete` manage allowed email domains. `workspace invitations create` and `delete` invite someone or cancel an invitation. `workspace members update` and `delete` change a role or remove a member.
 
 `webhooks create` and `webhooks rotate-secret` print the `oswhsec_…` signing secret on stdout once, with a stderr reminder to store it. A later GET does not return it. `oswhsec_…` values are redacted from error output.
 
-`webhooks update` needs at least one of `--url`, `--description`, `--event`, or `--active true|false`. Repeat `--event` to replace the list. On create, omitting `--event` enables every event type.
+`webhooks update` needs at least one of `--url`, `--description`, `--event`, or `--active true|false`. Repeat `--event` to replace the list. On create, omitting `--event` enables every event type. `workspace domains update` needs at least one of `--discoverable` or `--auto-join-enabled`. On `workspace invitations create`, omitting `--role` grants MEMBER.
 
 ### Dates
 
@@ -149,7 +163,7 @@ Text from the API is printed with terminal control characters (ANSI escapes, C1 
 | 0 | Success |
 | 1 | Usage or local validation error, including a missing `--yes` |
 | 2 | Unauthorized (HTTP 401) |
-| 3 | Forbidden (HTTP 403): missing `write` scope, connection-scoped key on a webhook command, or a plan feature not enabled |
+| 3 | Forbidden (HTTP 403): missing `write` scope, connection-scoped key on a webhook command or a workspace command other than `workspace get`, or a plan feature not enabled |
 | 4 | Rate limited (HTTP 429) |
 | 5 | Server error (5xx), query timeout (504), request timeout, network error, or a 2xx that was not JSON |
 | 6 | Any other HTTP status, including 400, 404, 409, and a redirect |

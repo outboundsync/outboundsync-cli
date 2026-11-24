@@ -1003,6 +1003,243 @@
       ],
       "write": true,
       "auth": true
+    },
+    {
+      "id": "workspace.domains",
+      "usage": "outboundsync workspace domains",
+      "summary": "List email domains that can see this workspace. Requires an account-scoped key.",
+      "method": "GET",
+      "path": "/api/v1/workspace/domains",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "workspace.domains.create",
+      "usage": "outboundsync workspace domains create",
+      "summary": "Allow an email domain for this workspace. Requires --yes, the write scope, and an account-scoped key.",
+      "method": "POST",
+      "path": "/api/v1/workspace/domains",
+      "flags": [
+        {
+          "name": "domain",
+          "help": "Registrable domain, such as acme.com. Stored only when the key owner's email is on it.",
+          "required": true
+        },
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "workspace.domains.delete",
+      "usage": "outboundsync workspace domains delete <domain>",
+      "summary": "Remove an allowed email domain. Existing members stay. Requires --yes, the write scope, and an account-scoped key.",
+      "method": "DELETE",
+      "path": "/api/v1/workspace/domains/{domain}",
+      "flags": [
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "workspace.domains.update",
+      "usage": "outboundsync workspace domains update <domain>",
+      "summary": "Change who on a domain can find or join the workspace. Pass at least one flag. Requires --yes, the write scope, and an account-scoped key.",
+      "method": "PATCH",
+      "path": "/api/v1/workspace/domains/{domain}",
+      "flags": [
+        {
+          "name": "discoverable",
+          "help": "true to let people on the domain find the workspace, false to hide it. false also turns auto-join off.",
+          "required": false,
+          "values": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "name": "auto-join-enabled",
+          "help": "true to let people on the domain join as Members. An unverified domain cannot turn this on.",
+          "required": false,
+          "values": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "workspace.get",
+      "usage": "outboundsync workspace get",
+      "summary": "Show the workspace for this key, the owner's role, and that role's permissions. A legacy key is rejected.",
+      "method": "GET",
+      "path": "/api/v1/workspace",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "workspace.invitations",
+      "usage": "outboundsync workspace invitations",
+      "summary": "List invitations that still need someone to act. Requires an account-scoped key.",
+      "method": "GET",
+      "path": "/api/v1/workspace/invitations",
+      "flags": [
+        {
+          "name": "status",
+          "help": "Which invitations to return. Default open (pending and expired). all includes accepted and revoked.",
+          "required": false,
+          "values": [
+            "open",
+            "pending",
+            "expired",
+            "accepted",
+            "revoked",
+            "all"
+          ]
+        }
+      ],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "workspace.invitations.create",
+      "usage": "outboundsync workspace invitations create",
+      "summary": "Invite someone to the workspace by email. Role defaults to MEMBER. Requires --yes, the write scope, and an account-scoped key.",
+      "method": "POST",
+      "path": "/api/v1/workspace/invitations",
+      "flags": [
+        {
+          "name": "email",
+          "help": "Address that receives the invitation.",
+          "required": true
+        },
+        {
+          "name": "role",
+          "help": "Role to grant. Default MEMBER.",
+          "required": false,
+          "values": [
+            "OWNER",
+            "ADMIN",
+            "MEMBER",
+            "VIEWER"
+          ]
+        },
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "workspace.invitations.delete",
+      "usage": "outboundsync workspace invitations delete <invitationId>",
+      "summary": "Cancel a pending or expired invitation. Requires --yes, the write scope, and an account-scoped key.",
+      "method": "DELETE",
+      "path": "/api/v1/workspace/invitations/{invitationId}",
+      "flags": [
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "workspace.members",
+      "usage": "outboundsync workspace members",
+      "summary": "List workspace members and their roles. Requires an account-scoped key.",
+      "method": "GET",
+      "path": "/api/v1/workspace/members",
+      "flags": [],
+      "write": false,
+      "auth": true
+    },
+    {
+      "id": "workspace.members.delete",
+      "usage": "outboundsync workspace members delete <email>",
+      "summary": "Remove a member. Requires --yes, the write scope, and an account-scoped key.",
+      "method": "DELETE",
+      "path": "/api/v1/workspace/members/{email}",
+      "flags": [
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "workspace.members.update",
+      "usage": "outboundsync workspace members update <email>",
+      "summary": "Change a member's role. Requires --yes, the write scope, and an account-scoped key.",
+      "method": "PATCH",
+      "path": "/api/v1/workspace/members/{email}",
+      "flags": [
+        {
+          "name": "role",
+          "help": "New role.",
+          "required": true,
+          "values": [
+            "OWNER",
+            "ADMIN",
+            "MEMBER",
+            "VIEWER"
+          ]
+        },
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
+    },
+    {
+      "id": "workspace.update",
+      "usage": "outboundsync workspace update",
+      "summary": "Rename the workspace. Requires --yes, the write scope, and an account-scoped key.",
+      "method": "PATCH",
+      "path": "/api/v1/workspace",
+      "flags": [
+        {
+          "name": "name",
+          "help": "New name. Blank is rejected, \"Create new workspace\" is reserved, and more than 80 characters is rejected.",
+          "required": true
+        },
+        {
+          "name": "yes",
+          "help": "Confirm this write.",
+          "required": true
+        }
+      ],
+      "write": true,
+      "auth": true
     }
   ]
 }
